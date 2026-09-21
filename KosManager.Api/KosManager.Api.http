@@ -1,0 +1,6 @@
+@KosManager.Api_HostAddress = http://localhost:5129
+
+GET {{KosManager.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

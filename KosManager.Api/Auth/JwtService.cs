@@ -1,0 +1,25 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using KosManager.Api.Models;
+using Microsoft.IdentityModel.Tokens;
+
+namespace KosManager.Api.Auth;
+
+public class JwtService(string secret)
+{
+    private readonly byte[] _key = Encoding.UTF8.GetBytes(secret);
+
+    public string Issue(User u)
+    {
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, u.Id.ToString()),
+            new Claim(ClaimTypes.Role, u.Role),
+            new Claim(JwtRegisteredClaimNames.Email, u.Email),
+        };
+        var creds = new SigningCredentials(new SymmetricSecurityKey(_key), SecurityAlgorithms.HmacSha256);
+        var jwt = new JwtSecurityToken(expires: DateTime.UtcNow.AddHours(24), claims: claims, signingCredentials: creds);
+        return new JwtSecurityTokenHandler().WriteToken(jwt);
+    }
+}
