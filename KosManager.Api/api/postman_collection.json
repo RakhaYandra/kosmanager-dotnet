@@ -1,1 +1,421 @@
-{"info":{"name":"kosmanager","schema":"https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},"item":[{"name":"healthz","request":{"method":"GET","url":"{{baseUrl}}/healthz"}},{"name":"register penghuni","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/auth/register","body":{"mode":"raw","raw":"{\"email\":\"qa-{{$timestamp}}@kos.local\",\"password\":\"Rahasia123\"}"}}},{"name":"login owner","event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('ownerToken', pm.response.json().token);"]}}],"request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/auth/login","body":{"mode":"raw","raw":"{\"email\":\"owner@kos.local\",\"password\":\"owner123\"}"}}},{"name":"login penghuni","event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('userToken', pm.response.json().token);"]}}],"request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/auth/login","body":{"mode":"raw","raw":"{\"email\":\"sinta@kos.local\",\"password\":\"penghuni123\"}"}}},{"name":"login salah 401","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/auth/login","body":{"mode":"raw","raw":"{\"email\":\"owner@kos.local\",\"password\":\"salah\"}"}}},{"name":"me owner","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"}],"url":"{{baseUrl}}/api/auth/me"}},{"name":"rooms list","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"}],"url":"{{baseUrl}}/api/rooms"}},{"name":"rooms create","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"},{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/rooms","body":{"mode":"raw","raw":"{\"number\":\"C{{$timestamp}}\",\"type\":\"standar\",\"monthlyPrice\":750000,\"status\":\"kosong\"}"}}},{"name":"tenants list","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"}],"url":"{{baseUrl}}/api/tenants"}},{"name":"tenants create","event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('tenantId', pm.response.json().id);"]}}],"request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"},{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/tenants","body":{"mode":"raw","raw":"{\"name\":\"QA User\",\"phone\":\"0812000099\",\"moveInDate\":\"2026-09-01\"}"}}},{"name":"bills list owner","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"}],"url":"{{baseUrl}}/api/bills"}},{"name":"bills list penghuni (milik sendiri)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/bills"}},{"name":"bills generate 403 penghuni","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/bills/generate?periode=2099-01"}},{"name":"bills generate 400 periode","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"}],"url":"{{baseUrl}}/api/bills/generate?periode=salah"}},{"name":"payments create","event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('payId', pm.response.json().id);"]}}],"request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/payments","body":{"mode":"raw","raw":"{\"billId\":4,\"method\":\"transfer\"}"}}},{"name":"payments verify queue","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"}],"url":"{{baseUrl}}/api/payments/queue"}},{"name":"payments verify approve","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"},{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/payments/{{payId}}/verify","body":{"mode":"raw","raw":"{\"approve\":false}"}}},{"name":"dashboard","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"}],"url":"{{baseUrl}}/api/dashboard"}},{"name":"report csv","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"}],"url":"{{baseUrl}}/api/dashboard/report.csv"}},{"name":"notify test mock","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{ownerToken}}"},{"key":"Content-Type","value":"application/json"}],"url":"{{baseUrl}}/api/notify/test","body":{"mode":"raw","raw":"{\"chatId\":\"12345\"}"}}},{"name":"no token 401","request":{"method":"GET","url":"{{baseUrl}}/api/dashboard"}},{"name":"swagger valid","request":{"method":"GET","url":"{{baseUrl}}/swagger/v1/swagger.json"}}]}
+{
+  "info": {
+    "name": "kosmanager",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "healthz",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/healthz"
+      }
+    },
+    {
+      "name": "register penghuni",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"qa-{{$timestamp}}@kos.local\",\"password\":\"Rahasia123\"}"
+        }
+      }
+    },
+    {
+      "name": "login owner",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('ownerToken', pm.response.json().token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"owner@kos.local\",\"password\":\"owner123\"}"
+        }
+      }
+    },
+    {
+      "name": "login penghuni",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('userToken', pm.response.json().token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"sinta@kos.local\",\"password\":\"penghuni123\"}"
+        }
+      }
+    },
+    {
+      "name": "login salah 401",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"owner@kos.local\",\"password\":\"salah\"}"
+        }
+      }
+    },
+    {
+      "name": "me owner",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/me"
+      }
+    },
+    {
+      "name": "rooms list",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/rooms"
+      }
+    },
+    {
+      "name": "rooms create",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/rooms",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"number\":\"C{{$timestamp}}\",\"type\":\"standar\",\"monthlyPrice\":750000,\"status\":\"kosong\"}"
+        }
+      }
+    },
+    {
+      "name": "tenants list",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tenants"
+      }
+    },
+    {
+      "name": "tenants create",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('tenantId', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tenants",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"QA User\",\"phone\":\"0812000099\",\"moveInDate\":\"2026-09-01\"}"
+        }
+      }
+    },
+    {
+      "name": "bills list owner",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bills"
+      }
+    },
+    {
+      "name": "bills list penghuni (milik sendiri)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bills"
+      }
+    },
+    {
+      "name": "bills generate 403 penghuni",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bills/generate?periode=2099-01"
+      }
+    },
+    {
+      "name": "bills generate 400 periode",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bills/generate?periode=salah"
+      }
+    },
+    {
+      "name": "payments create",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('payId', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/payments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"billId\":4,\"method\":\"transfer\"}"
+        }
+      }
+    },
+    {
+      "name": "payments verify queue",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/payments/queue"
+      }
+    },
+    {
+      "name": "payments verify approve",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/payments/{{payId}}/verify",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"approve\":false}"
+        }
+      }
+    },
+    {
+      "name": "dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/dashboard"
+      }
+    },
+    {
+      "name": "report csv",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/dashboard/report.csv"
+      }
+    },
+    {
+      "name": "notify test mock",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/notify/test",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"chatId\":\"12345\"}"
+        }
+      }
+    },
+    {
+      "name": "no token 401",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/dashboard"
+      }
+    },
+    {
+      "name": "swagger valid",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/swagger/v1/swagger.json"
+      }
+    },
+    {
+      "name": "receipt pdf owner",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('pdf',()=>{pm.response.to.have.status(200);pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf');});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bills/4/receipt.pdf"
+      }
+    },
+    {
+      "name": "receipt lintas penghuni 403",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{userToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/bills/5/receipt.pdf"
+      }
+    },
+    {
+      "name": "dashboard trend",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{ownerToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/dashboard/trend"
+      }
+    }
+  ]
+}

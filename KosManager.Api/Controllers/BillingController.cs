@@ -31,6 +31,13 @@ public class BillsController(BillingService billing) : ControllerBase
     [Authorize(Policy = "owner")]
     public async Task<IActionResult> Generate([FromQuery] string periode) =>
         Ok(new { generated = await billing.GenerateAsync(periode) });
+
+    [HttpGet("{id:int}/receipt.pdf")]
+    public async Task<IActionResult> Receipt(int id)
+    {
+        var pdf = await billing.ReceiptAsync(id, UserId, IsOwner);
+        return File(pdf, "application/pdf", $"struk-{id}.pdf");
+    }
 }
 
 [ApiController]
@@ -73,6 +80,9 @@ public class DashboardController(DashboardService dashboard) : ControllerBase
         var csv = await dashboard.ReportCsvAsync(periode ?? DateTime.Now.ToString("yyyy-MM"));
         return File(Encoding.UTF8.GetBytes(csv), "text/csv", $"rekap-{periode}.csv");
     }
+
+    [HttpGet("trend")]
+    public async Task<IActionResult> Trend() => Ok(await dashboard.TrendAsync());
 }
 
 [ApiController]

@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IPaymentRepository, EfPaymentRepository>();
         services.AddScoped<INotificationLogRepository, EfNotificationLogRepository>();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddScoped<Application.Billing.IReceiptService, Pdf.QuestPdfReceiptService>();
         services.AddSingleton<IJwtIssuer>(new JwtIssuer(jwtSecret));
         services.AddScoped<AuthService>();
         services.AddScoped<BillingService>();

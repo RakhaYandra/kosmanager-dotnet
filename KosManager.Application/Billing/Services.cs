@@ -9,7 +9,7 @@ public record BillDto(int Id, int TenantId, string Tenant, string Period, decima
 public record DashboardDto(object Occupancy, decimal Kas, decimal Tunggakan, List<OverdueDto> Overdue, int Reminders);
 public record OverdueDto(string Tenant, decimal Amount, DateOnly DueDate, int DaysLate);
 
-public class BillingService(IBillRepository bills, ITenantRepository tenants, CacheHelper cache)
+public class BillingService(IBillRepository bills, ITenantRepository tenants, CacheHelper cache, IReceiptService receipts)
 {
     public async Task<int> GenerateAsync(string periode, CancellationToken ct = default)
     {
@@ -46,6 +46,17 @@ public class BillingService(IBillRepository bills, ITenantRepository tenants, Ca
 
     public Task<int?> TenantIdByUserAsync(int userId, CancellationToken ct = default) =>
         tenants.TenantIdByUserAsync(userId, ct);
+
+    public async Task<byte[]> ReceiptAsync(int billId, int userId, bool isOwner, CancellationToken ct = default)
+    {
+        var b = await bills.ByIdWithDetailsAsync(billId, ct)
+            ?? throw new Auth.NotFoundException("tagihan tidak ada");
+        if (!isOwner && !await tenants.BelongsToUserAsync(b.TenantId, userId, ct))
+            throw new Auth.ForbiddenException("bukan tagihanmu");
+        return receipts.Render(new ReceiptData(
+            "KosManager Demo", b.Tenant!.Name, b.Tenant.Room?.Number ?? "—",
+            b.Period, b.Amount, b.DueDate, b.Status, DateOnly.FromDateTime(DateTime.Now)));
+    }
 }
 
 public class PaymentService(IBillRepository bills, IPaymentRepository payments, ITenantRepository tenants, CacheHelper cache)
@@ -113,6 +124,24 @@ public class DashboardService(IBillRepository bills, IRoomRepository rooms, INot
             sb.AppendLine($"{b.Tenant!.Name},{b.Period},{b.Amount},{b.DueDate:yyyy-MM-dd},{b.Status}");
         return sb.ToString();
     }
+
+    public record TrendPoint(string Period, decimal Kas, decimal Tunggakan);
+
+    public Task<List<TrendPoint>> TrendAsync(CancellationToken ct = default) =>
+        cache.GetOrCreateAsync("dash:trend", async () =>
+        {
+            var now = DateTime.Now;
+            var points = new List<TrendPoint>();
+            for (var i = 5; i >= 0; i--)
+            {
+                var p = now.AddMonths(-i).ToString("yyyy-MM");
+                var list = await bills.ByPeriodAsync(p, ct);
+                points.Add(new TrendPoint(p,
+                    list.Where(b => b.Status == BillStatuses.Paid).Sum(b => b.Amount),
+                    list.Where(b => b.Status != BillStatuses.Paid).Sum(b => b.Amount)));
+            }
+            return points;
+        }, TimeSpan.FromSeconds(60));
 }
 
 public class RoomService(IRoomRepository rooms, ITenantRepository tenants, CacheHelper cache)

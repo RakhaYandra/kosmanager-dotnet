@@ -77,6 +77,9 @@ public class EfBillRepository(AppDbContext db) : IBillRepository
         db.Bills.AsNoTracking().Include(b => b.Tenant).Where(b => b.Period == period).ToListAsync(ct);
     public async Task<Bill?> ByIdAsync(int id, CancellationToken ct = default) =>
         await db.Bills.FindAsync([id], ct);
+    public Task<Bill?> ByIdWithDetailsAsync(int id, CancellationToken ct = default) =>
+        db.Bills.Include(b => b.Tenant).ThenInclude(t => t!.Room)
+            .AsNoTracking().FirstOrDefaultAsync(b => b.Id == id, ct);
     public Task<bool> ExistsAsync(int tenantId, string period, CancellationToken ct = default) =>
         db.Bills.AsNoTracking().AnyAsync(b => b.TenantId == tenantId && b.Period == period, ct);
     public async Task AddAsync(Bill bill, CancellationToken ct = default) =>

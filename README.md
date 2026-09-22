@@ -6,7 +6,7 @@ Kos management REST API — **ASP.NET Core 8 + EF Core + MySQL + JWT + Backgroun
 
 **Purpose.** Pemilik kos menagih manual via chat: jatuh tempo lupa, tunggakan tak tercatat. KosManager mengganti dengan satu API: kamar, tagihan otomatis, dan reminder terjadwal.
 
-**Output.** API (`:8090`) + JWT 2 role (owner/penghuni), tagihan bulanan auto-generate (tenor tgl-10), reminder Telegram/Fonnte via `INotificationSender`, dashboard tunggakan + Newman 22/22.
+**Output.** API (`:8090`) + JWT 2 role (owner/penghuni), tagihan bulanan auto-generate (tenor tgl-10), reminder Telegram/Fonnte via `INotificationSender`, dashboard tunggakan + tren kas + struk PDF + Newman 25/25.
 
 ## Quickstart 5 menit
 
@@ -43,8 +43,9 @@ npx newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http
 | Tenants | CRUD + CSV import (maks 2MB, lapor imported/failed); ganti kamar → status isi. |
 | Bills | Auto-generate bulanan (tenor tgl-10), idempoten per tenant+periode, filter status, daysLate. |
 | Payments | Catat manual (tunai/transfer) → pending → verifikasi owner (paid/unpaid) + antrean. |
-| Dashboard | Okupansi, kas bulan ini, tunggakan + hari telat, reminders terkirim; export CSV. |
+| Dashboard | Okupansi, kas bulan ini, tunggakan + hari telat, reminders terkirim; export CSV; tren kas 6 bulan. |
 | Notify | Test-kirim + scheduler H-3/H-1/H+1 via `INotificationSender` (Telegram/Fonnte/mock). |
+| Struk | `GET /api/bills/{id}/receipt.pdf` (QuestPDF, stempel LUNAS/BELUM; owner atau miliknya). |
 
 ## How It Works
 
@@ -72,7 +73,11 @@ ReminderService (tiap jam) → H-3/H-1/H+1 sekali per tagihan (reminded_stage) �
 ## Coba via Swagger / Newman
 
 Swagger UI: `http://localhost:8090/swagger` (Swashbuckle bawaan).
-Newman (butuh API + DB + seed jalan): `npx newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http://localhost:8090` → 22/22.
+Newman (butuh API + DB + seed jalan): `npx newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http://localhost:8090` → 25/25.
+
+## Lisensi dependensi
+
+QuestPDF dipakai di bawah **Community License** (gratis untuk individu + proyek open-source MIT seperti repo ini; syarat: `LicenseType.Community`, tanpa key). Lihat questpdf.com/license. Alternatif murni-MIT (PdfSharpCore) sengaja tidak dipilih karena API layout manual.
 
 ## Cache (baca tanpa ke DB tiap request)
 

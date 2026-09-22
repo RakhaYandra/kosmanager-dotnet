@@ -40,6 +40,7 @@ public interface IBillRepository
     Task<List<Bill>> OpenAsync(CancellationToken ct = default);
     Task<List<Bill>> ByPeriodAsync(string period, CancellationToken ct = default);
     Task<Bill?> ByIdAsync(int id, CancellationToken ct = default);
+    Task<Bill?> ByIdWithDetailsAsync(int id, CancellationToken ct = default);
     Task<bool> ExistsAsync(int tenantId, string period, CancellationToken ct = default);
     Task AddAsync(Bill bill, CancellationToken ct = default);
     Task SaveAsync(CancellationToken ct = default);
