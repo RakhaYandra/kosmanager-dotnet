@@ -23,7 +23,7 @@ jobs:
         with: { dotnet-version: "8.0.x" }
       - run: dotnet build KosManager.Api
       - run: dotnet tool install -g dotnet-ef --version 8.0.13
-      - run: dotnet ef database update --project KosManager.Api
+      - run: dotnet ef database update --project KosManager.Infrastructure --startup-project KosManager.Api
       - run: mysql -h127.0.0.1 -P3308 -ukos -pkospass kosmanager < KosManager.Api/seed/seed.sql
       - run: dotnet KosManager.Api/bin/Debug/net8.0/KosManager.Api.dll --urls http://localhost:8090 &
       - run: |

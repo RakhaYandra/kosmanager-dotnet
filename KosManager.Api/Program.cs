@@ -1,8 +1,6 @@
-using KosManager.Api.Auth;
-using KosManager.Api.Data;
-using KosManager.Api.Services;
+using KosManager.Infrastructure;
+using KosManager.Api.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -19,12 +17,8 @@ var conn = builder.Configuration["DB_CONN"] ?? builder.Configuration.GetConnecti
     ?? throw new InvalidOperationException("Missing config: DB_CONN");
 var jwtSecret = Req("JWT_SECRET");
 
-builder.Services.AddSingleton(new JwtService(jwtSecret));
-builder.Services.AddSingleton<INotificationSender>(sp =>
-    NotifyFactory.Create(builder.Configuration, sp.GetRequiredService<IHttpClientFactory>().CreateClient()));
 builder.Services.AddHttpClient();
-builder.Services.AddHostedService<ReminderService>();
-builder.Services.AddDbContext<AppDbContext>(o => o.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+builder.Services.AddInfrastructure(builder.Configuration, conn, jwtSecret);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
     o.TokenValidationParameters = new TokenValidationParameters
@@ -43,6 +37,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.UseDomainExceptions();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseAuthentication();

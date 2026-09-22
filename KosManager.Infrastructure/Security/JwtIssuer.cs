@@ -1,12 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using KosManager.Api.Models;
+using KosManager.Application.Auth;
+using KosManager.Domain;
 using Microsoft.IdentityModel.Tokens;
 
-namespace KosManager.Api.Auth;
+namespace KosManager.Infrastructure.Security;
 
-public class JwtService(string secret)
+public class JwtIssuer(string secret) : IJwtIssuer
 {
     private readonly byte[] _key = Encoding.UTF8.GetBytes(secret);
 

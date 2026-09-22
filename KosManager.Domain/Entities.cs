@@ -1,11 +1,30 @@
-namespace KosManager.Api.Models;
+namespace KosManager.Domain;
+
+public static class Roles
+{
+    public const string Owner = "owner";
+    public const string Penghuni = "penghuni";
+}
+
+public static class BillStatuses
+{
+    public const string Unpaid = "unpaid";
+    public const string Pending = "pending";
+    public const string Paid = "paid";
+}
+
+public static class RoomStatuses
+{
+    public const string Kosong = "kosong";
+    public const string Isi = "isi";
+}
 
 public class User
 {
     public int Id { get; set; }
     public string Email { get; set; } = "";
     public string PasswordHash { get; set; } = "";
-    public string Role { get; set; } = "penghuni"; // owner | penghuni
+    public string Role { get; set; } = Roles.Penghuni;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
@@ -15,7 +34,7 @@ public class Room
     public string Number { get; set; } = "";
     public string Type { get; set; } = "standar";
     public decimal MonthlyPrice { get; set; }
-    public string Status { get; set; } = "kosong"; // kosong | isi
+    public string Status { get; set; } = RoomStatuses.Kosong;
 }
 
 public class Tenant
@@ -38,7 +57,7 @@ public class Bill
     public string Period { get; set; } = ""; // YYYY-MM
     public decimal Amount { get; set; }
     public DateOnly DueDate { get; set; }
-    public string Status { get; set; } = "unpaid"; // unpaid | pending | paid | overdue(di hitung)
+    public string Status { get; set; } = BillStatuses.Unpaid;
     public int RemindedStage { get; set; } // 0=none 1=H-3 2=H-1 3=H+1
     public Tenant? Tenant { get; set; }
 }

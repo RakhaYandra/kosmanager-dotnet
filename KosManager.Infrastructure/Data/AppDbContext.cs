@@ -1,7 +1,7 @@
-using KosManager.Api.Models;
+using KosManager.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace KosManager.Api.Data;
+namespace KosManager.Infrastructure.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {

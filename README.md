@@ -38,6 +38,6 @@ npx newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http
 
 Token nyata tidak pernah masuk git: `user-secrets` lokal + `.env.example` placeholder + fail-fast di `Program.cs` + CI secret dummy + mock sender. Lihat `.env.example`.
 
-## Struktur
+## Struktur (Clean Architecture-lite, lihat `docs/ADR-002-clean-architecture.md`)
 
-`Controllers/` (auth, rooms, tenants, bills, payments, dashboard, notify) · `Models/` · `Data/` (DbContext + EF migrations) · `Services/` (notify interface + Telegram/Fonnte/mock + ReminderService) · `seed/seed.sql` · `api/postman_collection.json`.
+`KosManager.Domain/` (entitas murni) · `KosManager.Application/` (interface repo + use-case + notify) · `KosManager.Infrastructure/` (EF, repo impl, JWT, sender, scheduler) · `KosManager.Api/` (controller tipis, tanpa EF using) · `seed/seed.sql` · `api/postman_collection.json`.

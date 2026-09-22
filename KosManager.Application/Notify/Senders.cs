@@ -1,4 +1,6 @@
-namespace KosManager.Api.Services;
+using System.Net.Http.Json;
+
+namespace KosManager.Application.Notify;
 
 public interface INotificationSender
 {
@@ -46,18 +48,16 @@ public class FonnteSender(HttpClient http, string token) : INotificationSender
     }
 }
 
-public static class NotifyFactory
+public static class Templates
 {
-    // Driver dipilih via env NOTIFY_CHANNEL=telegram|fonnte|mock (default mock = aman).
-    public static INotificationSender Create(IConfiguration cfg, HttpClient http)
+    public static string For(int stage, string nama, string periode, decimal nominal, DateOnly tgl)
     {
-        return cfg["NOTIFY_CHANNEL"] switch
+        var rp = nominal.ToString("N0", new System.Globalization.CultureInfo("id-ID"));
+        return stage switch
         {
-            "telegram" when !string.IsNullOrWhiteSpace(cfg["TELEGRAM_BOT_TOKEN"])
-                => new TelegramSender(http, cfg["TELEGRAM_BOT_TOKEN"]!),
-            "fonnte" when !string.IsNullOrWhiteSpace(cfg["FONNTE_TOKEN"])
-                => new FonnteSender(http, cfg["FONNTE_TOKEN"]!),
-            _ => new MockSender(),
+            1 => $"Halo {nama}, tagihan kos periode {periode} Rp{rp} jatuh tempo {tgl:dd MMM yyyy}. Balas SUDAH jika sudah bayar.",
+            2 => $"Pengingat: tagihan kos periode {periode} Rp{rp} jatuh tempo BESOK {tgl:dd MMM yyyy}. Balas SUDAH jika sudah bayar.",
+            _ => $"Tagihan kos periode {periode} Rp{rp} sudah lewat jatuh tempo {tgl:dd MMM yyyy} ({(DateOnly.FromDateTime(DateTime.Now).DayNumber - tgl.DayNumber)} hari). Mohon segera dibayar.",
         };
     }
 }

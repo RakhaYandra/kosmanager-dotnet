@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace KosManager.Api.Migrations
+namespace KosManager.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class Init : Migration
