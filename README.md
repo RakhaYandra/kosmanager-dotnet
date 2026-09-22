@@ -1,5 +1,9 @@
 # kosmanager-dotnet
 
+[![ci](https://github.com/RakhaYandra/kosmanager-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/RakhaYandra/kosmanager-dotnet/actions)
+
+> Ekosistem: [api](https://github.com/RakhaYandra/kosmanager-dotnet) · [web](https://github.com/RakhaYandra/kosmanager-dotnet-web) · [docs](https://github.com/RakhaYandra/kosmanager-dotnet-docs/releases) · [qa](https://github.com/RakhaYandra/kosmanager-dotnet-qa) · [data](https://github.com/RakhaYandra/kosmanager-dotnet-data) · [ops](https://github.com/RakhaYandra/kosmanager-dotnet-ops)
+
 Kos management REST API — **ASP.NET Core 8 + EF Core + MySQL + JWT + BackgroundService**. Single-kos MVP: rooms, tenants, auto-generate tagihan, verifikasi bayar, dashboard tunggakan, reminder Telegram H-3/H-1/H+1. Data contoh fiktif.
 
 ## Purpose, Output & Expectations
