@@ -74,9 +74,21 @@ ReminderService (tiap jam) → H-3/H-1/H+1 sekali per tagihan (reminded_stage) �
 Swagger UI: `http://localhost:8090/swagger` (Swashbuckle bawaan).
 Newman (butuh API + DB + seed jalan): `npx newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http://localhost:8090` → 22/22.
 
+## Cache (baca tanpa ke DB tiap request)
+
+- Lapis 0: `AsNoTracking()` di semua query read murni (tanpa risiko stale;
+  query yang hasilnya dimodifikasi — ById update, scheduler sweep, verify —
+  tetap tracked).
+- Lapis 1: `IMemoryCache` + `CacheHelper` (registrasi key per prefix,
+  invalidasi deterministik). TTL: dashboard 60 dtk, rooms/tenants 60 dtk,
+  bills/queue 30 dtk. Key milik penghuni selalu bawa tenant id (anti-bocor).
+  Semua endpoint tulis meng-invalidate prefix terkait (terverifikasi:
+  create room → list langsung berubah).
+- Observabilitas: MiniProfiler (`/profiler/results`) + log hit/miss (Debug).
+
 ## Dev & CI
 
-`dotnet build KosManager.Api` · `dotnet ef migrations add` di `KosManager.Infrastructure` · seed via `seed/seed.sql`.
+Build/migrasi/seed: `dotnet build KosManager.Api` · `dotnet ef migrations add` di `KosManager.Infrastructure` · `seed/seed.sql`.
 CI (`.github/workflows/ci.yml`): MySQL service → build → migrate → seed → boot → Newman.
 
 Keputusan arsitektur: [ADR-002](docs/ADR-002-clean-architecture.md) (Clean Architecture-lite).

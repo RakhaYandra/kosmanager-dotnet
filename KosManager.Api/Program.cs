@@ -18,6 +18,13 @@ var conn = builder.Configuration["DB_CONN"] ?? builder.Configuration.GetConnecti
 var jwtSecret = Req("JWT_SECRET");
 
 builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<KosManager.Application.Cache.CacheHelper>();
+builder.Services.AddMiniProfiler(o =>
+{
+    o.RouteBasePath = "/profiler";
+    o.ColorScheme = StackExchange.Profiling.ColorScheme.Dark;
+}).AddEntityFramework();
 builder.Services.AddInfrastructure(builder.Configuration, conn, jwtSecret);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {
@@ -38,6 +45,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 app.UseDomainExceptions();
+app.UseMiniProfiler();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseAuthentication();

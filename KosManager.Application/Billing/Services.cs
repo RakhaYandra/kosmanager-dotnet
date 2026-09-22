@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using KosManager.Application.Cache;
 using KosManager.Domain;
 
 namespace KosManager.Application.Billing;
@@ -8,7 +9,7 @@ public record BillDto(int Id, int TenantId, string Tenant, string Period, decima
 public record DashboardDto(object Occupancy, decimal Kas, decimal Tunggakan, List<OverdueDto> Overdue, int Reminders);
 public record OverdueDto(string Tenant, decimal Amount, DateOnly DueDate, int DaysLate);
 
-public class BillingService(IBillRepository bills, ITenantRepository tenants)
+public class BillingService(IBillRepository bills, ITenantRepository tenants, CacheHelper cache)
 {
     public async Task<int> GenerateAsync(string periode, CancellationToken ct = default)
     {
@@ -26,23 +27,28 @@ public class BillingService(IBillRepository bills, ITenantRepository tenants)
             made++;
         }
         await bills.SaveAsync(ct);
+        cache.InvalidatePrefix("bills");
+        cache.InvalidatePrefix("dash");
         return made;
     }
 
     public async Task<List<BillDto>> ListAsync(string? status, int? tenantId, CancellationToken ct = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        return (await bills.ListAsync(status, tenantId, ct))
-            .Select(b => new BillDto(b.Id, b.TenantId, b.Tenant!.Name, b.Period, b.Amount, b.DueDate, b.Status,
-                today.DayNumber - b.DueDate.DayNumber))
-            .ToList();
+        return await cache.GetOrCreateAsync(CacheKeys.Bills(tenantId, status ?? ""), async () =>
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            return (await bills.ListAsync(status, tenantId, ct))
+                .Select(b => new BillDto(b.Id, b.TenantId, b.Tenant!.Name, b.Period, b.Amount, b.DueDate, b.Status,
+                    today.DayNumber - b.DueDate.DayNumber))
+                .ToList();
+        }, TimeSpan.FromSeconds(30));
     }
 
     public Task<int?> TenantIdByUserAsync(int userId, CancellationToken ct = default) =>
         tenants.TenantIdByUserAsync(userId, ct);
 }
 
-public class PaymentService(IBillRepository bills, IPaymentRepository payments, ITenantRepository tenants)
+public class PaymentService(IBillRepository bills, IPaymentRepository payments, ITenantRepository tenants, CacheHelper cache)
 {
     public async Task<Payment> CreateAsync(int billId, string method, string? proofPath, int userId, bool isOwner, CancellationToken ct = default)
     {
@@ -54,6 +60,9 @@ public class PaymentService(IBillRepository bills, IPaymentRepository payments, 
         bill.Status = BillStatuses.Pending;
         await bills.SaveAsync(ct);
         await payments.SaveAsync(ct);
+        cache.InvalidatePrefix("bills");
+        cache.InvalidatePrefix("dash");
+        cache.InvalidatePrefix("queue");
         return p;
     }
 
@@ -65,15 +74,22 @@ public class PaymentService(IBillRepository bills, IPaymentRepository payments, 
         p.Bill!.Status = approve ? BillStatuses.Paid : BillStatuses.Unpaid;
         await payments.SaveAsync(ct);
         await bills.SaveAsync(ct);
+        cache.InvalidatePrefix("bills");
+        cache.InvalidatePrefix("dash");
+        cache.InvalidatePrefix("queue");
         return p;
     }
 
-    public Task<List<Payment>> QueueAsync(CancellationToken ct = default) => payments.UnverifiedQueueAsync(ct);
+    public Task<List<Payment>> QueueAsync(CancellationToken ct = default) =>
+        cache.GetOrCreateAsync(CacheKeys.Queue, () => payments.UnverifiedQueueAsync(ct), TimeSpan.FromSeconds(30));
 }
 
-public class DashboardService(IBillRepository bills, IRoomRepository rooms, INotificationLogRepository logs)
+public class DashboardService(IBillRepository bills, IRoomRepository rooms, INotificationLogRepository logs, CacheHelper cache)
 {
-    public async Task<DashboardDto> GetAsync(string periode, CancellationToken ct = default)
+    public Task<DashboardDto> GetAsync(string periode, CancellationToken ct = default) =>
+        cache.GetOrCreateAsync(CacheKeys.Dashboard(periode), () => BuildAsync(periode, ct), TimeSpan.FromSeconds(60));
+
+    private async Task<DashboardDto> BuildAsync(string periode, CancellationToken ct)
     {
         var today = DateOnly.FromDateTime(DateTime.Now);
         var list = await bills.ByPeriodAsync(periode, ct);
@@ -99,22 +115,24 @@ public class DashboardService(IBillRepository bills, IRoomRepository rooms, INot
     }
 }
 
-public class RoomService(IRoomRepository rooms, ITenantRepository tenants)
+public class RoomService(IRoomRepository rooms, ITenantRepository tenants, CacheHelper cache)
 {
-    public async Task<object> ListAsync(CancellationToken ct = default)
-    {
-        var names = await tenants.NamesByRoomAsync(ct);
-        return (await rooms.ListAsync(ct)).Select(r => new
+    public Task<object> ListAsync(CancellationToken ct = default) =>
+        cache.GetOrCreateAsync<object>(CacheKeys.Rooms, async () =>
         {
-            r.Id, r.Number, r.Type, r.MonthlyPrice, r.Status,
-            tenant = names.GetValueOrDefault(r.Id),
-        }).ToList();
-    }
+            var names = await tenants.NamesByRoomAsync(ct);
+            return (await rooms.ListAsync(ct)).Select(r => new
+            {
+                r.Id, r.Number, r.Type, r.MonthlyPrice, r.Status,
+                tenant = names.GetValueOrDefault(r.Id),
+            }).ToList();
+        }, TimeSpan.FromSeconds(60));
 
     public async Task<Room> CreateAsync(Room input, CancellationToken ct = default)
     {
         await rooms.AddAsync(input, ct);
         await rooms.SaveAsync(ct);
+        EvictCatalog();
         return input;
     }
 
@@ -123,6 +141,7 @@ public class RoomService(IRoomRepository rooms, ITenantRepository tenants)
         var r = await rooms.ByIdAsync(id, ct) ?? throw new Auth.NotFoundException("kamar tidak ada");
         r.Number = input.Number; r.Type = input.Type; r.MonthlyPrice = input.MonthlyPrice; r.Status = input.Status;
         await rooms.SaveAsync(ct);
+        EvictCatalog();
         return r;
     }
 
@@ -131,12 +150,22 @@ public class RoomService(IRoomRepository rooms, ITenantRepository tenants)
         var r = await rooms.ByIdAsync(id, ct) ?? throw new Auth.NotFoundException("kamar tidak ada");
         await rooms.RemoveAsync(r, ct);
         await rooms.SaveAsync(ct);
+        EvictCatalog();
+    }
+
+    private void EvictCatalog()
+    {
+        cache.InvalidatePrefix("rooms");
+        cache.InvalidatePrefix("tenants");
+        cache.InvalidatePrefix("dash");
+        cache.InvalidatePrefix("bills");
     }
 }
 
-public class TenantService(ITenantRepository tenants, IRoomRepository rooms)
+public class TenantService(ITenantRepository tenants, IRoomRepository rooms, CacheHelper cache)
 {
-    public Task<List<Tenant>> ListAsync(CancellationToken ct = default) => tenants.ListWithRoomAsync(ct);
+    public Task<List<Tenant>> ListAsync(CancellationToken ct = default) =>
+        cache.GetOrCreateAsync(CacheKeys.Tenants, () => tenants.ListWithRoomAsync(ct), TimeSpan.FromSeconds(60));
 
     public async Task<Tenant> CreateAsync(Tenant input, CancellationToken ct = default)
     {
@@ -144,6 +173,7 @@ public class TenantService(ITenantRepository tenants, IRoomRepository rooms)
         await SyncRoomAsync(input, ct);
         await tenants.SaveAsync(ct);
         await rooms.SaveAsync(ct);
+        EvictCatalog();
         return input;
     }
 
@@ -155,6 +185,7 @@ public class TenantService(ITenantRepository tenants, IRoomRepository rooms)
         await SyncRoomAsync(t, ct);
         await tenants.SaveAsync(ct);
         await rooms.SaveAsync(ct);
+        EvictCatalog();
         return t;
     }
 
@@ -163,6 +194,7 @@ public class TenantService(ITenantRepository tenants, IRoomRepository rooms)
         var t = await tenants.ByIdAsync(id, ct) ?? throw new Auth.NotFoundException("penghuni tidak ada");
         await tenants.RemoveAsync(t, ct);
         await tenants.SaveAsync(ct);
+        EvictCatalog();
     }
 
     public async Task<(int Imported, int Failed)> ImportAsync(Stream csv, CancellationToken ct = default)
@@ -182,7 +214,16 @@ public class TenantService(ITenantRepository tenants, IRoomRepository rooms)
             ok++;
         }
         await tenants.SaveAsync(ct);
+        EvictCatalog();
         return (ok, failed);
+    }
+
+    private void EvictCatalog()
+    {
+        cache.InvalidatePrefix("tenants");
+        cache.InvalidatePrefix("rooms");
+        cache.InvalidatePrefix("dash");
+        cache.InvalidatePrefix("bills");
     }
 
     private async Task SyncRoomAsync(Tenant t, CancellationToken ct)
