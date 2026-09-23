@@ -34,6 +34,18 @@ public static class DependencyInjection
         services.AddScoped<TenantService>();
         services.AddSingleton<INotificationSender>(sp => CreateSender(cfg, sp.GetRequiredService<IHttpClientFactory>().CreateClient()));
         services.AddHostedService<ReminderService>();
+        var polling = cfg["TELEGRAM_POLLING"] ?? "off";
+        if (polling != "off")
+        {
+            services.AddSingleton<ITelegramClient>(sp => polling switch
+            {
+                "live" => new HttpTelegramClient(
+                    sp.GetRequiredService<IHttpClientFactory>().CreateClient(),
+                    cfg["TELEGRAM_BOT_TOKEN"] ?? throw new InvalidOperationException("Missing config: TELEGRAM_BOT_TOKEN")),
+                _ => new FakeTelegramClient(cfg["TELEGRAM_FAKE_FILE"]),
+            });
+            services.AddHostedService<TelegramPollingService>();
+        }
         return services;
     }
 

@@ -49,6 +49,7 @@ npx newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http
 | Payments | Catat manual (tunai/transfer) → pending → verifikasi owner (paid/unpaid) + antrean. |
 | Dashboard | Okupansi, kas bulan ini, tunggakan + hari telat, reminders terkirim; export CSV; tren kas 6 bulan. |
 | Notify | Test-kirim + scheduler H-3/H-1/H+1 via `INotificationSender` (Telegram/Fonnte/mock). |
+| Inbound | `TelegramPollingService` (getUpdates/10 dtk, offset file): `/start <email>` tautkan chat, `SUDAH` catat pending. Mode `TELEGRAM_POLLING=off|fake|live` (lihat ADR-005). |
 | Struk | `GET /api/bills/{id}/receipt.pdf` (QuestPDF, stempel LUNAS/BELUM; owner atau miliknya). |
 
 ## How It Works
