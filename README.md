@@ -14,15 +14,29 @@ Kos management REST API — **ASP.NET Core 8 + EF Core + MySQL + JWT + Backgroun
 
 ## Quickstart 5 menit
 
+`JWT_SECRET` **wajib** diisi lewat env — `appsettings.json` sengaja dikosongkan
+agar app gagal cepat (`Missing config: JWT_SECRET`) alih-alih jalan dengan
+kunci tanda tangan yang ada di repo. Salin `.env.example` untuk nilai contoh.
+
 ```bash
+# 1. MySQL
 docker run -d --name kos-mysql -e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE=kosmanager \
   -e MYSQL_USER=kos -e MYSQL_PASSWORD=kospass -p 3308:3306 mysql:8.4
+
+# 2. Migrasi + seed
 dotnet tool install -g dotnet-ef --version 8.0.13
 dotnet ef database update --project KosManager.Infrastructure --startup-project KosManager.Api
 docker exec -i kos-mysql mysql -ukos -pkospass kosmanager < KosManager.Api/seed/seed.sql
+
+# 3. Jalankan (JWT_SECRET wajib, min 32 karakter)
+export JWT_SECRET="$(openssl rand -hex 32)"
 dotnet run --project KosManager.Api --urls http://localhost:8090
+
 curl -s localhost:8090/healthz  # {"status":"ok"}
 ```
+
+Alternatif tanpa SDK lokal — compose di repo `ops` menangani MySQL + API:
+`cp ../ops/repo/.env.example ../ops/repo/.env` lalu `docker compose up -d`.
 
 Login seed: `owner@kos.local / owner123`, `sinta@kos.local / penghuni123`.
 
