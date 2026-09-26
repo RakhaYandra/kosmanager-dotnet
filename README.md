@@ -24,6 +24,8 @@ docker run -d --name kos-mysql -e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE
   -e MYSQL_USER=kos -e MYSQL_PASSWORD=kospass -p 3308:3306 mysql:8.4
 
 # 2. Migrasi + seed
+# `dotnet ef` tidak butuh JWT_SECRET — AppDbContextFactory menyediakan
+# DbContext sendiri untuk design-time.
 dotnet tool install -g dotnet-ef --version 8.0.13
 dotnet ef database update --project KosManager.Infrastructure --startup-project KosManager.Api
 docker exec -i kos-mysql mysql -ukos -pkospass kosmanager < KosManager.Api/seed/seed.sql
