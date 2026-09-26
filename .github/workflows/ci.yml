@@ -3,29 +3,50 @@ on: [push, pull_request]
 jobs:
   ci:
     runs-on: ubuntu-latest
+    # Throwaway: service container MySQL dibuat fresh per run lalu dibuang.
+    # JWT_SECRET ini juga throwaway — yang penting app TIDAK bisa start tanpa
+    # env, karena appsettings.json sengaja dikosongkan (lihat fail-fast Program.cs).
+    env:
+      MYSQL_PASSWORD: ci-dummy-password
+      MYSQL_ROOT_PASSWORD: ci-dummy-root
+      JWT_SECRET: ci-dummy-min-32-karakter-aman
+      NOTIFY_CHANNEL: mock
     services:
       mysql:
         image: mysql:8.4
         env:
-          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
           MYSQL_DATABASE: kosmanager
           MYSQL_USER: kos
-          MYSQL_PASSWORD: kospass
+          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
         ports: ["3308:3306"]
         options: --health-cmd="mysqladmin ping -h localhost" --health-interval=5s --health-timeout=3s --health-retries=20
-    env:
-      DB_CONN: "server=127.0.0.1;port=3308;database=kosmanager;user=kos;password=kospass"
-      JWT_SECRET: "ci-secret-minimal-32-karakter-aman"
-      NOTIFY_CHANNEL: mock
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: "8.0.x" }
-      - run: dotnet build KosManager.Api
+      - run: dotnet build KosManager.Api -c Release
       - run: dotnet tool install -g dotnet-ef --version 8.0.13
       - run: dotnet ef database update --project KosManager.Infrastructure --startup-project KosManager.Api
-      - run: mysql -h127.0.0.1 -P3308 -ukos -pkospass kosmanager < KosManager.Api/seed/seed.sql
-      - run: dotnet KosManager.Api/bin/Debug/net8.0/KosManager.Api.dll --urls http://localhost:8090 &
+        env:
+          DB_CONN: "server=127.0.0.1;port=3308;database=kosmanager;user=kos;password=${{ env.MYSQL_PASSWORD }}"
+      - run: mysql -h127.0.0.1 -P3308 -ukos -p"$MYSQL_PASSWORD" kosmanager < KosManager.Api/seed/seed.sql
+      - run: dotnet KosManager.Api/bin/Release/net8.0/KosManager.Api.dll --urls http://localhost:8090 &
+        env:
+          DB_CONN: "server=127.0.0.1;port=3308;database=kosmanager;user=kos;password=${{ env.MYSQL_PASSWORD }}"
       - run: |
           for i in $(seq 1 20); do curl -sf http://localhost:8090/healthz && break || sleep 5; done
       - run: npx --yes newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http://localhost:8090
+      # newman.json adalah report run (isi token) — tidak boleh masuk repo.
+      - name: no committed run reports
+        run: |
+          set -euo pipefail
+          git ls-files | grep -qE 'newman.*\.json$|^reports/' \
+            && { echo "::error::report Newman ter-commit (berisi token)"; exit 1; } \
+            || echo "clean"
+      - name: JWT_SECRET not hardcoded
+        run: |
+          set -euo pipefail
+          v=$(python3 -c "import json;print(json.load(open('KosManager.Api/appsettings.json'))['JWT_SECRET'])")
+          [ -z "$v" ] || { echo "::error::JWT_SECRET di appsettings.json harus kosong (nilai: $v)"; exit 1; }
+          echo "fail-fast config OK"
