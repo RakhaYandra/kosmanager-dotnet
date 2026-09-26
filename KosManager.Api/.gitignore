@@ -1,6 +1,0 @@
-.env
-*.user
-bin/
-obj/
-appsettings.Development.json
-telegram-offset.dat

@@ -1,0 +1,22 @@
+# Context build Docker — jangan kirim noise ke image
+**/bin
+**/obj
+.git
+.gitignore
+.env
+.env.*
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.local.json
+
+# Report test ikut ke-copy karena Web SDK glob **/*.json
+newman*.json
+
+# Docs & tooling tidak dibutuhkan runtime
+docs/
+.github/
+*.md
+!README.md
+
+Dockerfile
+.dockerignore

@@ -1,5 +1,49 @@
+# Env & konfigurasi lokal
 .env
-*.user
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.local.json
+
+# Build .NET
 bin/
 obj/
-appsettings.Development.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+.vscode/
+
+# Report test — di-generate CI, jangan di-commit (bisa berisi token)
+newman*.json
+TestResults/
+*.trx
+coverage/
+coverage*.xml
+coverage*.json
+*.opencover.xml
+
+# State runtime
+telegram-offset.dat
+*.db
+*.sqlite*
+*.dat
+
+# Log & scratch
+*.log
+*.bak
+*.tmp
+*.orig
+*~
+
+# Kunci & sertifikat
+*.pfx
+*.p12
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
