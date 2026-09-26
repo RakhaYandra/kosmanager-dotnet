@@ -13,8 +13,13 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var conn = Environment.GetEnvironmentVariable("DB_CONN")
-            ?? "server=localhost;port=3308;database=kosmanager;user=kos;password=kospass";
+        var conn = Environment.GetEnvironmentVariable("DB_CONN");
+        if (string.IsNullOrWhiteSpace(conn))
+        {
+            throw new InvalidOperationException(
+                "DB_CONN wajib diisi untuk operasi design-time (migrate/script). "
+                + "Contoh: server=localhost;port=3308;database=kosmanager;user=kos;password=...");
+        }
 
         var o = new DbContextOptionsBuilder<AppDbContext>()
             .UseMySql(conn, ServerVersion.AutoDetect(conn))

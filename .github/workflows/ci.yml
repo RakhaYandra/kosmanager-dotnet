@@ -9,7 +9,7 @@ jobs:
     env:
       MYSQL_PASSWORD: ci-dummy-password
       MYSQL_ROOT_PASSWORD: ci-dummy-root
-      JWT_SECRET: ci-dummy-min-32-karakter-aman
+      JWT_SECRET: ci-dummy-secret-min-32-karakter-aman
       NOTIFY_CHANNEL: mock
     services:
       mysql:
