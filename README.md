@@ -10,7 +10,7 @@ Kos management REST API — **ASP.NET Core 8 + EF Core + MySQL + JWT + Backgroun
 
 **Purpose.** Pemilik kos menagih manual via chat: jatuh tempo lupa, tunggakan tak tercatat. KosManager mengganti dengan satu API: kamar, tagihan otomatis, dan reminder terjadwal.
 
-**Output.** API (`:8090`) + JWT 2 role (owner/penghuni), tagihan bulanan auto-generate (tenor tgl-10), reminder Telegram/Fonnte via `INotificationSender`, dashboard tunggakan + tren kas + struk PDF + Newman 25/25.
+**Output.** API (`:8090`) + JWT 2 role (owner/penghuni), tagihan bulanan auto-generate (tenor tgl-10), reminder Telegram/Fonnte via `INotificationSender`, dashboard tunggakan + tren kas + struk PDF + Newman 25/25 (digate CI repo qa).
 
 ## Quickstart 5 menit
 
@@ -92,7 +92,7 @@ ReminderService (tiap jam) → H-3/H-1/H+1 sekali per tagihan (reminded_stage) �
 ## Coba via Swagger / Newman
 
 Swagger UI: `http://localhost:8090/swagger` (Swashbuckle bawaan).
-Newman (butuh API + DB + seed jalan): `npx newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http://localhost:8090` → 25/25.
+Newman (butuh API + DB + seed jalan): `npx newman run KosManager.Api/api/postman_collection.json --env-var baseUrl=http://localhost:8090` → 25/25 (gate CI: `qa.yml` assert total == 25 & failed == 0).
 
 ## Lisensi dependensi
 
